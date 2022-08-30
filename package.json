@@ -1,5 +1,5 @@
 {
-  "name": "extism-pdk",
+  "name": "@extism/as-pdk",
   "version": "0.0.1-rc.1",
   "description": "Extism Plugin Development Kit (PDK) for AssemblyScript.",
   "author": "The Extism Authors <oss@extism.org>",
