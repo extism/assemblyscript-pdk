@@ -36,6 +36,7 @@ jobs:
       - name: Install Extism & CLI
         run: |
           pushd cli
+          pip3 install cffi
           pip3 install .
           popd
 
