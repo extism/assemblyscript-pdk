@@ -25,14 +25,16 @@ export function count_vowels(): i32 {
 
   // test some host functionality
   const vars = host.vars()
-  var a = new Uint8Array(4);
-  a.set([65, 65, 65, 65]);
+
+  var a = Uint8Array.wrap(String.UTF8.encode("this is var a"))
   vars.set('a', a);
+
   const data = vars.get('a')
-  vars.remove('a');
 
   var out = '{"count": ' + count.toString() + ', "a": ' + data.toString() + '}';
   host.outputString(out);
+
+  vars.remove('a');
 
   return 0;
 }
