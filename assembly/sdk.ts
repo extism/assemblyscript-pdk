@@ -25,7 +25,7 @@ export class Variables {
   }
 
   get(key: string): Uint8Array {
-    const mem = this.host.allocateBytes(stringToBytes(key))
+    const mem = this.host.allocateString(key)
     const offset = extism_var_get(mem.offset)
     const length = extism_length(offset)
     if (offset == 0 || length == 0) {
@@ -39,14 +39,14 @@ export class Variables {
   }
 
   set(key: string, value: Uint8Array): void {
-    const keyMem = this.host.allocateBytes(stringToBytes(key))
+    const keyMem = this.host.allocateString(key)
     const valMem = this.host.allocate(value.length)
 
     extism_var_set(keyMem.offset, valMem.offset)
   }
 
   remove(key: string): void {
-    const mem = this.host.allocateBytes(stringToBytes(key))
+    const mem = this.host.allocateString(key)
     extism_var_set(mem.offset, 0)
   }
 }
@@ -96,6 +96,13 @@ export class Host {
     return new Memory(offset, length)
   }
 
+  allocateString(data: string): Memory {
+    const buf = String.UTF8.encode(data)
+    const bytes = Uint8Array.wrap(buf)
+
+    return this.allocateBytes(bytes)
+  }
+
   input(): Array<u8> {
     let dest = new Array<u8>(u32(this.input_length))
 
@@ -109,14 +116,14 @@ export class Host {
   inputString(): string {
     return String.fromCharCodes(
       this.input().map<i32>((value, _index, _self) => i32(value))
-    );
+    )
   }
 
   outputString(s: string): void {
     const length = s.length;
     const offset = extism_alloc(length)
-    store(offset, stringToBytes(s))
-    extism_output_set(offset, length);
+    store(offset, Uint8Array.wrap(String.UTF8.encode(s)))
+    extism_output_set(offset, length)
   }
 
   output(s: Uint8Array): void {
@@ -127,8 +134,7 @@ export class Host {
   }
 
   config(key: string): string {
-    const bytes = stringToBytes(key)
-    const mem = this.allocateBytes(bytes)
+    const mem = this.allocateString(key)
 
     const offset = extism_config_get(mem.offset)
     const length = extism_length(offset)
@@ -145,15 +151,6 @@ export class Host {
   vars(): Variables {
     return new Variables(this)
   }
-}
-
-function stringToBytes(s: string): Uint8Array {
-  const bytes: Uint8Array = new Uint8Array(s.length)
-  for (let i = 0; i < s.length; i++) {
-    bytes[i] = u8(s.charCodeAt(i))
-  }
-
-  return bytes
 }
 
 function load(offset: u64, value: Uint8Array): void {

@@ -24,7 +24,6 @@ export function count_vowels(): i32 {
   }
 
   // test some host functionality
-  host.config('none')
   const vars = host.vars()
   var a = new Uint8Array(4);
   a.set([65, 65, 65, 65]);
