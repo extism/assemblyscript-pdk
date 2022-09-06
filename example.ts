@@ -1,4 +1,4 @@
-import { Host } from './assembly/sdk';
+import { Host } from './lib/sdk';
 
 function myAbort(
   message: string | null,

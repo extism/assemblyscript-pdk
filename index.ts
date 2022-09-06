@@ -1,1 +1,1 @@
-export * from './assembly/sdk';
+export * from './lib/sdk';
