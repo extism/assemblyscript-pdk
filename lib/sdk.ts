@@ -40,7 +40,7 @@ export class Variables {
 
   set(key: string, value: Uint8Array): void {
     const keyMem = this.host.allocateString(key)
-    const valMem = this.host.allocate(value.length)
+    const valMem = this.host.allocateBytes(value)
 
     extism_var_set(keyMem.offset, valMem.offset)
   }
