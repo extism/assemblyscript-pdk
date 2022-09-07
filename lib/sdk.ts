@@ -154,13 +154,28 @@ export class Host {
 }
 
 function load(offset: u64, value: Uint8Array): void {
-  for (let i = 0; i < value.length; i++) {
-    value[i] = extism_load_u8(offset + i)
+  let u64 = Uint64Array.wrap(value.buffer, 0, value.length / 8);
+  for (var i = 0; i < value.length; i++) {
+    if (value.length - i < 8) {
+      value[i] = extism_load_u8(offset + i);
+      continue;
+    }
+
+    u64[i / 8] = extism_load_u64(offset + i);
+    i += 7;
   }
 }
 
 function store(offset: u64, value: Uint8Array): void {
-  for (let i = 0; i < value.length; i++) {
-    extism_store_u8(offset + i, value[i])
+  let u64 = Uint64Array.wrap(value.buffer, 0, value.length / 8);
+
+  for (var i = 0; i < value.length; i++) {
+    if (value.length - i < 8) {
+      extism_store_u8(offset + i, value[i])
+      continue;
+    }
+
+    extism_store_u64(offset + i, u64[i / 8]);
+    i += 7;
   }
 }
