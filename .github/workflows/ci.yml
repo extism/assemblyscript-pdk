@@ -1,0 +1,55 @@
+name: CI
+on: [push, pull_request]
+
+jobs:
+  test-example:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+        rust:
+          - stable
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Install Rust
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: ${{ matrix.rust }}
+          override: true
+
+      - name: Setup Python env
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.9"
+          check-latest: true
+
+      - name: Install Poetry
+        uses: snok/install-poetry@v1
+
+      - name: Checkout extism/cli
+        uses: actions/checkout@v3
+        with:
+          repository: extism/cli
+          path: cli
+
+      - name: Install Extism & CLI
+        run: |
+          pushd cli
+          pip3 install cffi
+          pip3 install .
+          popd
+
+          extism install latest
+
+      - name: Install Node
+        uses: actions/setup-node@v3
+
+      - name: Compile example
+        run: |
+          npm i -g assemblyscript
+          asc example.ts --outFile example.wasm --use abort=example/myAbort
+
+      - name: Test example
+        run: |
+          extism call --input "this is a test" example.wasm count_vowels | grep "4"
