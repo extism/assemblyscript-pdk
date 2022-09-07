@@ -31,7 +31,7 @@ export function count_vowels(): i32 {
 
   const data = vars.get('a')
 
-  var out = '{"count": ' + count.toString() + ', "a": ' + data.toString() + '}';
+  var out = '{"count": ' + count.toString() + ', "a": "' + String.UTF8.decode(data.buffer) + '"}';
   host.outputString(out);
 
   vars.remove('a');
