@@ -24,16 +24,16 @@ export class Variables {
     this.host = host
   }
 
-  get(key: string): Uint8Array {
+  get(key: string): Uint8Array | null {
     const mem = this.host.allocateString(key)
     const offset = extism_var_get(mem.offset)
     if (offset == 0) {
-      return new Uint8Array(0)
+      return null;
     }
 
     const length = extism_length(offset)
     if (length == 0) {
-      return new Uint8Array(0)
+      return null;
     }
 
     let value: Uint8Array = new Uint8Array(u32(length))
@@ -137,17 +137,17 @@ export class Host {
     extism_output_set(offset, length)
   }
 
-  config(key: string): string {
+  config(key: string): string | null {
     const mem = this.allocateString(key)
 
     const offset = extism_config_get(mem.offset)
     if (offset == 0) {
-      return ""
+      return null
     }
 
     const length = extism_length(offset)
     if (length == 0) {
-      return ""
+      return null
     }
 
     let buffer: ArrayBuffer = new ArrayBuffer(u32(length));
