@@ -27,8 +27,12 @@ export class Variables {
   get(key: string): Uint8Array {
     const mem = this.host.allocateString(key)
     const offset = extism_var_get(mem.offset)
+    if (offset == 0) {
+      return new Uint8Array(0)
+    }
+
     const length = extism_length(offset)
-    if (offset == 0 || length == 0) {
+    if (length == 0) {
       return new Uint8Array(0)
     }
 
@@ -137,8 +141,12 @@ export class Host {
     const mem = this.allocateString(key)
 
     const offset = extism_config_get(mem.offset)
+    if (offset == 0) {
+      return ""
+    }
+
     const length = extism_length(offset)
-    if (offset == 0 || length == 0) {
+    if (length == 0) {
       return ""
     }
 
