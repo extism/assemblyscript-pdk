@@ -24,12 +24,16 @@ export class Variables {
     this.host = host
   }
 
-  get(key: string): Uint8Array {
+  get(key: string): Uint8Array | null {
     const mem = this.host.allocateString(key)
     const offset = extism_var_get(mem.offset)
+    if (offset == 0) {
+      return null;
+    }
+
     const length = extism_length(offset)
-    if (offset == 0 || length == 0) {
-      return new Uint8Array(0)
+    if (length == 0) {
+      return null;
     }
 
     let value: Uint8Array = new Uint8Array(u32(length))
@@ -103,20 +107,18 @@ export class Host {
     return this.allocateBytes(bytes)
   }
 
-  input(): Array<u8> {
-    let dest = new Array<u8>(u32(this.input_length))
+  input(): Uint8Array {
+    let bytes = new Uint8Array(i32(this.input_length));
 
     for (let i = u32(0); i < u32(this.input_length); i++) {
-      dest[i] = u8(extism_load_u8(u32(this.input_offset) + i))
+      bytes[i] = u8(extism_load_u8(u32(this.input_offset) + i))
     }
 
-    return dest
+    return bytes
   }
 
   inputString(): string {
-    return String.fromCharCodes(
-      this.input().map<i32>((value, _index, _self) => i32(value))
-    )
+    return String.UTF8.decode(this.input().buffer)
   }
 
   outputString(s: string): void {
@@ -133,13 +135,17 @@ export class Host {
     extism_output_set(offset, length)
   }
 
-  config(key: string): string {
+  config(key: string): string | null {
     const mem = this.allocateString(key)
 
     const offset = extism_config_get(mem.offset)
+    if (offset == 0) {
+      return null
+    }
+
     const length = extism_length(offset)
-    if (offset == 0 || length == 0) {
-      return ""
+    if (length == 0) {
+      return null
     }
 
     let buffer: ArrayBuffer = new ArrayBuffer(u32(length));

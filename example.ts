@@ -1,4 +1,4 @@
-import { Host } from './lib/sdk';
+import { Host } from './lib/pdk';
 
 function myAbort(
   message: string | null,
@@ -28,10 +28,11 @@ export function count_vowels(): i32 {
 
   var a = Uint8Array.wrap(String.UTF8.encode("this is var a"))
   vars.set('a', a);
+  const thing = host.config("thing");
+  let data = vars.get('a');
+  let var_a = (data == null) ? "null" : String.UTF8.decode(data.buffer);
 
-  const data = vars.get('a')
-
-  var out = '{"count": ' + count.toString() + ', "a": "' + String.UTF8.decode(data.buffer) + '"}';
+  var out = '{"count": ' + count.toString() + ', "config": "' + (thing == null ? "null" : thing) + '", "a": "' + var_a + '"}';
   host.outputString(out);
 
   vars.remove('a');
