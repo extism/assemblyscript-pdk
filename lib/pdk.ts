@@ -16,7 +16,11 @@ import {
   extism_load_u32,
   extism_store_u64,
   extism_load_u64,
-  extism_http_request
+  extism_http_request,
+  extism_log_debug,
+  extism_log_error,
+  extism_log_info,
+  extism_log_warn,
 } from './env'
 
 export class Variables {
@@ -112,6 +116,13 @@ export class Pointer<T> {
   }
 }
 
+export enum LogLevel {
+  Info,
+  Warn,
+  Debug,
+  Error
+}
+
 export class Host {
   input: Uint8Array
 
@@ -181,6 +192,28 @@ export class Host {
 
   vars(): Variables {
     return new Variables(this)
+  }
+
+  logMemory(level: LogLevel, memory: Memory): void {
+    switch (level) {
+      case LogLevel.Info:
+        extism_log_info(memory.offset);
+        break;
+      case LogLevel.Debug:
+        extism_log_debug(memory.offset);
+        break;
+      case LogLevel.Error:
+        extism_log_error(memory.offset);
+        break;
+      case LogLevel.Warn:
+        extism_log_warn(memory.offset);
+        break;
+    }
+  }
+
+  log(level: LogLevel, s: string): void {
+    let mem = this.allocateString(s);
+    this.logMemory(level, mem)
   }
 }
 
