@@ -77,24 +77,36 @@ export class Memory {
 export class Pointer<T> {
   public value: T
   public memory: Memory
+  encodeBytes: (x: T) => Uint8Array
 
-  public constructor(value: T, memory: Memory) {
+  public constructor(value: T, memory: Memory, encodeBytes: (x: T) => Uint8Array) {
     this.value = value;
     this.memory = memory;
+    this.encodeBytes = encodeBytes;
   }
 
   static string(memory: Memory): Pointer<string> {
     let buffer: ArrayBuffer = new ArrayBuffer(u32(memory.length));
     let value: Uint8Array = Uint8Array.wrap(buffer)
     load(memory.offset, value)
-    return new Pointer(String.UTF8.decode(buffer), memory);
+    return new Pointer(String.UTF8.decode(buffer), memory, function(x) {
+      let buf = String.UTF8.encode(x);
+      return Uint8Array.wrap(buf);
+    });
   }
 
   static uint8Array(memory: Memory): Pointer<Uint8Array> {
     let buffer: ArrayBuffer = new ArrayBuffer(u32(memory.length));
     let value: Uint8Array = Uint8Array.wrap(buffer)
     load(memory.offset, value)
-    return new Pointer(value, memory);
+    return new Pointer(value, memory, function(x) {
+      return x;
+    });
+  }
+
+  public save(): void {
+    let buf = this.encodeBytes(this.value);
+    store(this.memory.offset, buf);
   }
 }
 
