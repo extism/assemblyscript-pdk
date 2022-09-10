@@ -30,9 +30,9 @@ export function count_vowels(): i32 {
   vars.set('a', a);
   const thing = host.config("thing");
   let data = vars.get('a');
-  let var_a = (data == null) ? "null" : String.UTF8.decode(data.buffer);
+  let var_a = (data == null) ? "null" : String.UTF8.decode(data.value.buffer);
 
-  var out = '{"count": ' + count.toString() + ', "config": "' + (thing == null ? "null" : thing) + '", "a": "' + var_a + '"}';
+  var out = '{"count": ' + count.toString() + ', "config": "' + (thing == null ? "null" : thing.value) + '", "a": "' + var_a + '"}';
   host.outputString(out);
 
   vars.remove('a');
