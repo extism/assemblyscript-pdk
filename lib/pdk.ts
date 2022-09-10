@@ -24,7 +24,7 @@ export class Variables {
     this.host = host
   }
 
-  get(key: string): Uint8Array | null {
+  public get(key: string): Pointer<Uint8Array> | null {
     const mem = this.host.allocateString(key)
     const offset = extism_var_get(mem.offset)
     if (offset == 0) {
@@ -36,20 +36,17 @@ export class Variables {
       return null;
     }
 
-    let value: Uint8Array = new Uint8Array(u32(length))
-    load(offset, value)
-
-    return value
+    return Pointer.uint8Array(new Memory(offset, length));
   }
 
-  set(key: string, value: Uint8Array): void {
+  public set(key: string, value: Uint8Array): void {
     const keyMem = this.host.allocateString(key)
     const valMem = this.host.allocateBytes(value)
 
     extism_var_set(keyMem.offset, valMem.offset)
   }
 
-  remove(key: string): void {
+  public remove(key: string): void {
     const mem = this.host.allocateString(key)
     extism_var_set(mem.offset, 0)
   }
@@ -64,16 +61,40 @@ export class Memory {
     this.length = length
   }
 
-  load(buffer: Uint8Array): void {
+  public load(buffer: Uint8Array): void {
     load(this.offset, buffer)
   }
 
-  store(data: Uint8Array): void {
+  public store(data: Uint8Array): void {
     store(this.offset, data)
   }
 
-  free(): void {
+  public free(): void {
     extism_free(this.offset)
+  }
+}
+
+export class Pointer<T> {
+  public value: T
+  public memory: Memory
+
+  public constructor(value: T, memory: Memory) {
+    this.value = value;
+    this.memory = memory;
+  }
+
+  static string(memory: Memory): Pointer<string> {
+    let buffer: ArrayBuffer = new ArrayBuffer(u32(memory.length));
+    let value: Uint8Array = Uint8Array.wrap(buffer)
+    load(memory.offset, value)
+    return new Pointer(String.UTF8.decode(buffer), memory);
+  }
+
+  static uint8Array(memory: Memory): Pointer<Uint8Array> {
+    let buffer: ArrayBuffer = new ArrayBuffer(u32(memory.length));
+    let value: Uint8Array = Uint8Array.wrap(buffer)
+    load(memory.offset, value)
+    return new Pointer(value, memory);
   }
 }
 
@@ -135,7 +156,12 @@ export class Host {
     extism_output_set(offset, length)
   }
 
-  config(key: string): string | null {
+
+  outputMemory(m: Memory): void {
+    extism_output_set(m.offset, m.length)
+  }
+
+  config(key: string): Pointer<string> | null {
     const mem = this.allocateString(key)
 
     const offset = extism_config_get(mem.offset)
@@ -148,10 +174,7 @@ export class Host {
       return null
     }
 
-    let buffer: ArrayBuffer = new ArrayBuffer(u32(length));
-    let value: Uint8Array = Uint8Array.wrap(buffer)
-    load(offset, value)
-    return String.UTF8.decode(buffer)
+    return Pointer.string(new Memory(offset, length));
   }
 
   vars(): Variables {
