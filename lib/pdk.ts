@@ -1,5 +1,7 @@
 import {
-  extism_input_offset,
+  extism_input_length,
+  extism_input_load_u8,
+  extism_input_load_u64,
   extism_length,
   extism_alloc,
   extism_free,
@@ -111,12 +113,10 @@ export class Pointer<T> {
 }
 
 export class Host {
-  input_offset: u64
-  input_length: u64
+  input: Uint8Array
 
   constructor() {
-    this.input_offset = extism_input_offset()
-    this.input_length = extism_length(this.input_offset)
+    this.input = loadInput();
   }
 
   allocate(length: u64): Memory {
@@ -140,18 +140,8 @@ export class Host {
     return this.allocateBytes(bytes)
   }
 
-  input(): Uint8Array {
-    let bytes = new Uint8Array(i32(this.input_length));
-
-    for (let i = u32(0); i < u32(this.input_length); i++) {
-      bytes[i] = u8(extism_load_u8(u32(this.input_offset) + i))
-    }
-
-    return bytes
-  }
-
   inputString(): string {
-    return String.UTF8.decode(this.input().buffer)
+    return String.UTF8.decode(this.input.buffer)
   }
 
   outputString(s: string): void {
@@ -205,6 +195,23 @@ function load(offset: u64, value: Uint8Array): void {
     u64[i / 8] = extism_load_u64(offset + i);
     i += 7;
   }
+}
+
+
+function loadInput(): Uint8Array {
+  let length = extism_input_length();
+  let value = new Uint8Array(u32(length));
+  let u64 = Uint64Array.wrap(value.buffer, 0, value.length / 8);
+  for (var i = 0; i < value.length; i++) {
+    if (value.length - i < 8) {
+      value[i] = extism_input_load_u8(i);
+      continue;
+    }
+
+    u64[i / 8] = extism_input_load_u64(i);
+    i += 7;
+  }
+  return value;
 }
 
 function store(offset: u64, value: Uint8Array): void {

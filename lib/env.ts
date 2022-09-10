@@ -1,4 +1,6 @@
-export declare function extism_input_offset(): u64
+export declare function extism_input_length(): u64
+export declare function extism_input_load_u8(offs: u64): u8
+export declare function extism_input_load_u64(offs: u64): u64
 export declare function extism_length(a: u64): u64
 export declare function extism_alloc(a: u64): u64
 export declare function extism_free(a: u64): void
