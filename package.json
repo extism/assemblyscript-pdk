@@ -1,11 +1,27 @@
 {
   "name": "@extism/as-pdk",
-  "version": "0.0.1-rc.1",
+  "version": "0.0.1-rc.2",
   "description": "Extism Plugin Development Kit (PDK) for AssemblyScript.",
+  "keywords": [
+    "extism",
+    "webassembly",
+    "wasm",
+    "plugins",
+    "extension"
+  ],
+  "homepage": "https://extism.org",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/extism/assemblyscript-pdk.git"
+  },
   "author": "The Extism Authors <oss@extism.org>",
   "license": "BSD-3-Clause",
+  "private": false,
   "main": "index.ts",
   "devDependencies": {
     "assemblyscript": "^0.21"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }
