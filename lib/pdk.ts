@@ -1,5 +1,7 @@
 import {
-  extism_input_offset,
+  extism_input_length,
+  extism_input_load_u8,
+  extism_input_load_u64,
   extism_length,
   extism_alloc,
   extism_free,
@@ -14,7 +16,11 @@ import {
   extism_load_u32,
   extism_store_u64,
   extism_load_u64,
-  extism_http_request
+  extism_http_request,
+  extism_log_debug,
+  extism_log_error,
+  extism_log_info,
+  extism_log_warn,
 } from './env'
 
 export class Variables {
@@ -24,7 +30,7 @@ export class Variables {
     this.host = host
   }
 
-  get(key: string): Uint8Array | null {
+  public get(key: string): Pointer<Uint8Array> | null {
     const mem = this.host.allocateString(key)
     const offset = extism_var_get(mem.offset)
     if (offset == 0) {
@@ -36,20 +42,17 @@ export class Variables {
       return null;
     }
 
-    let value: Uint8Array = new Uint8Array(u32(length))
-    load(offset, value)
-
-    return value
+    return Pointer.uint8Array(new Memory(offset, length));
   }
 
-  set(key: string, value: Uint8Array): void {
+  public set(key: string, value: Uint8Array): void {
     const keyMem = this.host.allocateString(key)
     const valMem = this.host.allocateBytes(value)
 
     extism_var_set(keyMem.offset, valMem.offset)
   }
 
-  remove(key: string): void {
+  public remove(key: string): void {
     const mem = this.host.allocateString(key)
     extism_var_set(mem.offset, 0)
   }
@@ -64,26 +67,67 @@ export class Memory {
     this.length = length
   }
 
-  load(buffer: Uint8Array): void {
+  public load(buffer: Uint8Array): void {
     load(this.offset, buffer)
   }
 
-  store(data: Uint8Array): void {
+  public store(data: Uint8Array): void {
     store(this.offset, data)
   }
 
-  free(): void {
+  public free(): void {
     extism_free(this.offset)
   }
 }
 
+export class Pointer<T> {
+  public value: T
+  public memory: Memory
+  encodeBytes: (x: T) => Uint8Array
+
+  public constructor(value: T, memory: Memory, encodeBytes: (x: T) => Uint8Array) {
+    this.value = value;
+    this.memory = memory;
+    this.encodeBytes = encodeBytes;
+  }
+
+  static string(memory: Memory): Pointer<string> {
+    let buffer: ArrayBuffer = new ArrayBuffer(u32(memory.length));
+    let value: Uint8Array = Uint8Array.wrap(buffer)
+    load(memory.offset, value)
+    return new Pointer(String.UTF8.decode(buffer), memory, function(x) {
+      let buf = String.UTF8.encode(x);
+      return Uint8Array.wrap(buf);
+    });
+  }
+
+  static uint8Array(memory: Memory): Pointer<Uint8Array> {
+    let buffer: ArrayBuffer = new ArrayBuffer(u32(memory.length));
+    let value: Uint8Array = Uint8Array.wrap(buffer)
+    load(memory.offset, value)
+    return new Pointer(value, memory, function(x) {
+      return x;
+    });
+  }
+
+  public save(): void {
+    let buf = this.encodeBytes(this.value);
+    store(this.memory.offset, buf);
+  }
+}
+
+export enum LogLevel {
+  Info,
+  Warn,
+  Debug,
+  Error
+}
+
 export class Host {
-  input_offset: u64
-  input_length: u64
+  input: Uint8Array
 
   constructor() {
-    this.input_offset = extism_input_offset()
-    this.input_length = extism_length(this.input_offset)
+    this.input = loadInput();
   }
 
   allocate(length: u64): Memory {
@@ -107,18 +151,8 @@ export class Host {
     return this.allocateBytes(bytes)
   }
 
-  input(): Uint8Array {
-    let bytes = new Uint8Array(i32(this.input_length));
-
-    for (let i = u32(0); i < u32(this.input_length); i++) {
-      bytes[i] = u8(extism_load_u8(u32(this.input_offset) + i))
-    }
-
-    return bytes
-  }
-
   inputString(): string {
-    return String.UTF8.decode(this.input().buffer)
+    return String.UTF8.decode(this.input.buffer)
   }
 
   outputString(s: string): void {
@@ -135,7 +169,12 @@ export class Host {
     extism_output_set(offset, length)
   }
 
-  config(key: string): string | null {
+
+  outputMemory(m: Memory): void {
+    extism_output_set(m.offset, m.length)
+  }
+
+  config(key: string): Pointer<string> | null {
     const mem = this.allocateString(key)
 
     const offset = extism_config_get(mem.offset)
@@ -148,14 +187,33 @@ export class Host {
       return null
     }
 
-    let buffer: ArrayBuffer = new ArrayBuffer(u32(length));
-    let value: Uint8Array = Uint8Array.wrap(buffer)
-    load(offset, value)
-    return String.UTF8.decode(buffer)
+    return Pointer.string(new Memory(offset, length));
   }
 
   vars(): Variables {
     return new Variables(this)
+  }
+
+  logMemory(level: LogLevel, memory: Memory): void {
+    switch (level) {
+      case LogLevel.Info:
+        extism_log_info(memory.offset);
+        break;
+      case LogLevel.Debug:
+        extism_log_debug(memory.offset);
+        break;
+      case LogLevel.Error:
+        extism_log_error(memory.offset);
+        break;
+      case LogLevel.Warn:
+        extism_log_warn(memory.offset);
+        break;
+    }
+  }
+
+  log(level: LogLevel, s: string): void {
+    let mem = this.allocateString(s);
+    this.logMemory(level, mem)
   }
 }
 
@@ -170,6 +228,23 @@ function load(offset: u64, value: Uint8Array): void {
     u64[i / 8] = extism_load_u64(offset + i);
     i += 7;
   }
+}
+
+
+function loadInput(): Uint8Array {
+  let length = extism_input_length();
+  let value = new Uint8Array(u32(length));
+  let u64 = Uint64Array.wrap(value.buffer, 0, value.length / 8);
+  for (var i = 0; i < value.length; i++) {
+    if (value.length - i < 8) {
+      value[i] = extism_input_load_u8(i);
+      continue;
+    }
+
+    u64[i / 8] = extism_input_load_u64(i);
+    i += 7;
+  }
+  return value;
 }
 
 function store(offset: u64, value: Uint8Array): void {
