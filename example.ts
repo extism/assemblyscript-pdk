@@ -1,4 +1,4 @@
-import { Host } from './lib/pdk';
+import { Var, Config, Host } from './lib/pdk';
 
 function myAbort(
   message: string | null,
@@ -9,8 +9,7 @@ function myAbort(
 
 
 export function count_vowels(): i32 {
-  let host = new Host();
-  let str = host.inputString();
+  let str = Host.inputString();
   var count = 0;
   for (var i = 0; i < str.length; i++) {
     let x: string = str[i];
@@ -24,18 +23,15 @@ export function count_vowels(): i32 {
   }
 
   // test some host functionality
-  const vars = host.vars()
-
   var a = Uint8Array.wrap(String.UTF8.encode("this is var a"))
-  vars.set('a', a);
-  const thing = host.config("thing");
-  let data = vars.get('a');
-  let var_a = (data == null) ? "null" : String.UTF8.decode(data.value.buffer);
+  Var.set('a', a);
+  const thing = Config.get("thing");
+  let data = Var.get('a');
+  let var_a = (data == null) ? "null" : String.UTF8.decode(data.buffer);
 
-  var out = '{"count": ' + count.toString() + ', "config": "' + (thing == null ? "null" : thing.value) + '", "a": "' + var_a + '"}';
-  host.outputString(out);
-
-  vars.remove('a');
+  var out = '{"count": ' + count.toString() + ', "config": "' + (thing == null ? "null" : thing) + '", "a": "' + var_a + '"}';
+  Host.outputString(out);
+  Var.remove('a');
 
   return 0;
 }
