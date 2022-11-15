@@ -12,8 +12,6 @@ import {
   extism_var_set,
   extism_store_u8,
   extism_load_u8,
-  extism_store_u32,
-  extism_load_u32,
   extism_store_u64,
   extism_load_u64,
   extism_http_request,
