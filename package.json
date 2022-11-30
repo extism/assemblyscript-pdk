@@ -1,10 +1,13 @@
 {
   "name": "@extism/as-pdk",
-  "version": "0.0.1-rc.1",
+  "version": "0.1.0",
   "description": "Extism Plugin Development Kit (PDK) for AssemblyScript.",
   "author": "The Extism Authors <oss@extism.org>",
   "license": "BSD-3-Clause",
   "main": "index.ts",
+  "scripts": {
+    "example": "npx asc example.ts --outFile example.wasm --use abort=example/myAbort"
+  },
   "devDependencies": {
     "assemblyscript": "^0.21"
   }
