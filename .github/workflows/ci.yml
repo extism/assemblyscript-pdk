@@ -40,7 +40,7 @@ jobs:
           pip3 install .
           popd
 
-          extism install latest
+          extism install git
 
       - name: Install Node
         uses: actions/setup-node@v3
@@ -52,4 +52,7 @@ jobs:
 
       - name: Test example
         run: |
-          extism call --input "this is a test" example.wasm count_vowels | grep "4"
+          TEST=$(extism call example.wasm --input "this is a test" --set-config='{"thing": "1", "a": "b"}' count_vowels)
+          echo $TEST | grep '"count": 4'
+          echo $TEST | grep '"config": "1"'
+          echo $TEST | grep '"a": "this is var a"'
