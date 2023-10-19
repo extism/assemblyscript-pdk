@@ -19,7 +19,7 @@ import {
   store_u8,
   var_get,
   var_set,
-} from "./extism:env";
+} from "./env";
 
 export class Var {
   public static getMemory(key: string): Memory | null {
