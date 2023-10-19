@@ -1,6 +1,6 @@
 {
   "name": "@extism/as-pdk",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Extism Plugin Development Kit (PDK) for AssemblyScript.",
   "keywords": [
     "extism",
