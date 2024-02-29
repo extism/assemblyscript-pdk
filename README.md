@@ -3,7 +3,7 @@
 ### Installation
 
 ```sh
-npm install @extism/as-pdk@1.0.0-rc1 --save
+npm install @extism/as-pdk@1.0.0 --save
 ```
 
 ### Compiling to WebAssembly
